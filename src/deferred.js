@@ -1,7 +1,4 @@
 var utils = require('./utils');
-/**
- * Deferred 类
- */
 function Deferred() {
     var DONE = 'done',
         FAIL = 'fail',

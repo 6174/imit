@@ -1,4 +1,4 @@
 var config      = require('./config'),
-    ViewModel   = require('./viewmodel'),
-    utils       = require('./utils');
+    utils       = require('./utils'),
+    ViewModel   = require('./viewmodel');
 model.exports = ViewModel;

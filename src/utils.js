@@ -1,59 +1,125 @@
 /**
  * utils
- * 
+ *
  * @author: xuejia.cxj/6174
  */
-var class2type = {},
+var config = require('./config'),
+    class2type = {},
+    hasOwn = Object.prototype.hasOwnProperty,
+    serialize = Object.prototype.toString,
+    defer = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.setTimeout,
+    isString = isType('String'),
+    isFunction = isType('Function'),
+    isUndefined = isType('Undefined'),
+    isArray = Array.isArray || isType('Array'),
     rword = /[^, ]+/g,
-    hasOwn = Object.prototype.hasOwnProperty;
-    serialize = Object.prototype.toString;
-
+    BRACKET_RE_S = /\['([^']+)'\]/g,
+    BRACKET_RE_D = /\["([^"]+)"\]/g;
 "Boolean Number String Function Array Date RegExp Object Error".replace(rword, function(name) {
     class2type["[object " + name + "]"] = name.toLowerCase()
 });
-
 /**
- * getypeof A obj
+ * Object utils
  */
-function getType (obj) {
-    if (obj == null) {
-        return String(obj);
+var object = {
+    baseKey: function(namespace) {
+        return key.indexOf('.') > 0 ? key.split('.')[0] : key;
+    },
+    hash: function() {
+        return Object.create(null)
+    },
+    bind: function(fn, ctx) {
+        return function(arg) {
+            return fn.call(ctx, arg)
+        }
+    },
+    has: function(obj, key) {
+        return hasOwn.call(obj, key);
+    },
+    get: function(obj, key) {
+        key = normalizeKeypath(key)
+        if (key.indexOf('.') < 0) {
+            return obj[key]
+        }
+        var path = key.split('.'),
+            d = -1,
+            l = path.length
+        while (++d < l && obj != null) {
+            obj = obj[path[d]]
+        }
+        return obj
+    },
+    set: function(obj, key, val) {
+        key = normalizeKeypath(key)
+        if (key.indexOf('.') < 0) {
+            obj[key] = val
+            return
+        }
+        var path = key.split('.'),
+            d = -1,
+            l = path.length - 1
+        while (++d < l) {
+            if (obj[path[d]] == null) {
+                obj[path[d]] = {}
+            }
+            obj = obj[path[d]]
+        }
+        obj[path[d]] = val
+    },
+    /**
+     * 继承
+     * @param {Object} protoProps 需要继承的原型
+     * @param {Object} staticProps 静态的类方法
+     */
+    extend: function(protoProps, staticProps) {
+        var parent = this;
+        var child;
+        if (protoProps && has(protoProps, 'constructor')) {
+            child = protoProps.constructor;
+        } else {
+            child = function() {
+                return parent.apply(this, arguments);
+            }
+        }
+        mix(child, parent);
+        mix(child, staticProps);
+        var Surrogate = function() {
+            this.constructor = child;
+        };
+        Surrogate.prototype = parent.prototype;
+        child.prototype = new Surrogate;
+        if (protoProps) {
+            mix(child.prototype, protoProps);
+        }
+        child.__super__ = parent.prototype;
+        return child;
     }
-    return typeof obj === "object" || typeof obj === "function" ?
-            class2type[serialize.call(obj)] || "object" :
-            typeof obj;
-}
+};
 /**
- * is* Helper
+ * array utils
  */
-function isType(type) {
-    return function(obj) {
-        return {}.toString.call(obj) === '[object ' + type + ']';
+var array = {
+    indexOf: function(element, arr) {
+        if (!isArray(arr)) {
+            return -1;
+        }
+        return arr.indexOf(element);
     }
 }
-var isString = isType('String');
-var isFunction = isType('Function');
-var isUndefined = isType('Undefined');
-var isArray = Array.isArray || isType('Array');
-
-/**
- * equality judge
+/** 
+ * dom utils
  */
-function isEqual(v1, v2){
-    if (v1 === 0 && v2 === 0) {
-        return 1 / v1 === 1 / v2
-    } else if (v1 !== v1) {
-        return v2 !== v2
-    } else {
-        return v1 === v2
+var dom = {
+    attr: function(el, type) {
+        var attr = config.prefix + '-' + type,
+            val = el.getAttribute(attr)
+        if (val !== null) {
+            el.removeAttribute(attr)
+        }
+        return val
     }
-}
+};
 
-function guid(prefix) {
-    prefix = prefix || '';
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-}
- 
 /**
  * 简单地对象合并
  * @param  object r 源对象
@@ -64,7 +130,7 @@ function guid(prefix) {
  */
 function mix(r, s, o, d) {
     for (var k in s) {
-        if (hasOwn(s, k)) {
+        if (hasOwn.call(s, k)) {
             if (!(k in r)) {
                 r[k] = s[k];
             } else if (o) {
@@ -78,25 +144,57 @@ function mix(r, s, o, d) {
     }
     return r;
 }
+/**
+ *  Normalize keypath with possible brackets into dot notations
+ */
+function normalizeKeypath(key) {
+    return key.indexOf('[') < 0 ? key : key.replace(BRACKET_RE_S, '.$1').replace(BRACKET_RE_D, '.$1')
+}
+
+function getType(obj) {
+    if (obj == null) {
+        return String(obj);
+    }
+    return typeof obj === "object" || typeof obj === "function" ? class2type[serialize.call(obj)] || "object" : typeof obj;
+}
+
+function isType(type) {
+    return function(obj) {
+        return {}.toString.call(obj) === '[object ' + type + ']';
+    }
+}
+
+function isEqual(v1, v2) {
+    if (v1 === 0 && v2 === 0) {
+        return 1 / v1 === 1 / v2
+    } else if (v1 !== v1) {
+        return v2 !== v2
+    } else {
+        return v1 === v2
+    }
+}
+
+function guid(prefix) {
+    prefix = prefix || '';
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
+function nextTick(cb) {
+    defer(cb, 0)
+}
 
 function merge(args) {
     var ret = {},
         i, l;
-    if (!R.isArray(args)) {
+    if (!isArray(args)) {
         args = [].slice.call(arguments);
     }
     for (i = 0, l = args.length; i < l; i++) {
-        R.mix(ret, args[i], true);
+        mix(ret, args[i], true);
     }
     return ret;
 }
 
-/**
- * 类似于forEach
- * @param  [] | {}  obj 对象或者数组
- * @param  Function fn  迭代函数
- * @return undefined
- */
 function each(obj, fn) {
     var i, l, ks;
     if (isArray(obj)) {
@@ -114,57 +212,25 @@ function each(obj, fn) {
         }
     }
 }
- 
-/**
- * 判断对象是否有相应的方法
- * @param {Object} obj
- * @param {String} key
- */
-function has(obj, key) {
-    return hasOwn.call(obj, key);
-}
-/**
- * 判断元素在数组中的位置
- * @param {Any} element
- * @param {Array} arr
- * @return {Number} index
- */
-function indexOf(element, arr) {
-    if (!isArray(arr)) {
-        return -1;
+
+function log(msg) {
+    if (config.debug && console) {
+        console.log(msg)
     }
-    return arr.indexOf(element);
-}
-/**
- * 继承
- * @param {Object} protoProps 需要继承的原型
- * @param {Object} staticProps 静态的类方法
- */
-function extend(protoProps, staticProps) {
-    var parent = this;
-    var child;
-    if (protoProps && has(protoProps, 'constructor')) {
-        child = protoProps.constructor;
-    } else {
-        child = function() {
-            return parent.apply(this, arguments);
-        }
-    }
-    mix(child, parent);
-    mix(child, staticProps);
-    var Surrogate = function() {
-        this.constructor = child;
-    };
-    Surrogate.prototype = parent.prototype;
-    child.prototype = new Surrogate;
-    if (protoProps) {
-        mix(child.prototype, protoProps);
-    }
-    child.__super__ = parent.prototype;
-    return child;
 }
 
+function warn(msg) {
+    if (!config.silent && console) {
+        console.warn(msg);
+        if (config.debug && console.trace) {
+            console.trace();
+        }
+    }
+}
 module.exports = {
+    object: object,
+    array: array,
+    dom: dom,
     getType: getType,
     isArray: isArray,
     isObject: isObject,
@@ -173,13 +239,11 @@ module.exports = {
     mix: mix,
     merge: merge,
     guid: guid,
-    indexOf: indexOf,
     extend: extend,
     hasOwn: hasOwn,
     serialize: serialize,
     each: each,
-    hasOwn: hasOwn,
-    has: has
+    log: log,
+    warn: warn,
+    nextTick: nextTick
 }
-
-
