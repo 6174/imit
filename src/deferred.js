@@ -15,11 +15,11 @@ function Deferred() {
     function dispatch(cbs) {
         var cb;
         while ((cb = cbs.shift()) || (cb = callbacks.always.shift())) {
-            setTimeout((function(fn) {
+            utils.nextTick((function(fn) {
                 return function() {
                     fn.apply(context, args);
                 };
-            })(cb), 0);
+            })(cb));
         }
     }
     return {
@@ -98,7 +98,7 @@ function Deferred() {
         promise: function() {
             var ret = {},
                 self = this,
-                keys = utils.keys(this);
+                keys = utils.object.keys(this);
             utils.each(keys, function(k) {
                 if (k === 'resolve' || k === 'reject') {
                     return;

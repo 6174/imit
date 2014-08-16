@@ -3,18 +3,24 @@
  *
  * @author: xuejia.cxj/6174
  */
-var config = require('./config'),
-    class2type = {},
-    hasOwn = Object.prototype.hasOwnProperty,
-    serialize = Object.prototype.toString,
-    defer = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.setTimeout,
-    isString = isType('String'),
-    isFunction = isType('Function'),
-    isUndefined = isType('Undefined'),
-    isArray = Array.isArray || isType('Array'),
-    rword = /[^, ]+/g,
+
+var win = typeof window !== "undefined" ?  window : {
+        setTimeout: setTimeout
+    };
+
+var config       = require('./config'),
+    class2type   = {},
+    rword        = /[^, ]+/g,
     BRACKET_RE_S = /\['([^']+)'\]/g,
     BRACKET_RE_D = /\["([^"]+)"\]/g;
+    isString     = isType('String'),
+    isFunction   = isType('Function'),
+    isUndefined  = isType('Undefined'),
+    isObject     = isType('Object'),
+    isArray      = Array.isArray || isType('Array'),
+    hasOwn       = Object.prototype.hasOwnProperty,
+    serialize    = Object.prototype.toString,
+    defer        = win.requestAnimationFrame || win.webkitRequestAnimationFrame || win.setTimeout,
 "Boolean Number String Function Array Date RegExp Object Error".replace(rword, function(name) {
     class2type["[object " + name + "]"] = name.toLowerCase()
 });
@@ -66,6 +72,23 @@ var object = {
         }
         obj[path[d]] = val
     },
+    keys: function (obj) {
+        var _keys = Object.keys,
+            ret = [];
+
+        if (isObject(obj)) {
+            if (_keys) {
+                ret = _keys(obj);
+            } else {
+                for (var k in obj) {
+                    if (hasOwn.call(obj,k)) {
+                        ret.push(k);
+                    }
+                }
+            }
+        }
+        return ret;
+    },
     /**
      * 继承
      * @param {Object} protoProps 需要继承的原型
@@ -99,16 +122,16 @@ var object = {
  * array utils
  */
 var array = {
-    indexOf: function(element, arr) {
-        if (!isArray(arr)) {
-            return -1;
+        indexOf: function(element, arr) {
+            if (!isArray(arr)) {
+                return -1;
+            }
+            return arr.indexOf(element);
         }
-        return arr.indexOf(element);
     }
-}
-/** 
- * dom utils
- */
+    /** 
+     * dom utils
+     */
 var dom = {
     attr: function(el, type) {
         var attr = config.prefix + '-' + type,
@@ -119,7 +142,6 @@ var dom = {
         return val
     }
 };
-
 /**
  * 简单地对象合并
  * @param  object r 源对象
@@ -235,11 +257,11 @@ module.exports = {
     isArray: isArray,
     isObject: isObject,
     isString: isString,
+    isFunction: isFunction,
     isEqual: isEqual,
     mix: mix,
     merge: merge,
     guid: guid,
-    extend: extend,
     hasOwn: hasOwn,
     serialize: serialize,
     each: each,
