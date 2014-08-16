@@ -1,0 +1,23 @@
+{
+  "name": "imit",
+  "version": "0.0.0",
+  "description": "mvvm for tmall ",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "gitlab-alibaba-inc.com/xuejia.cxj/imit"
+  },
+  "keywords": [
+    "mvvm"
+  ],
+  "author": "6174",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.8.7",
+    "gulp-browserify": "^0.5.0",
+    "gulp-rename": "^1.2.0"
+  }
+}
