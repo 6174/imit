@@ -20,6 +20,7 @@ var config       = require('./config'),
     isArray      = Array.isArray || isType('Array'),
     hasOwn       = Object.prototype.hasOwnProperty,
     serialize    = Object.prototype.toString,
+    def          = Object.defineProperty,
     defer        = win.requestAnimationFrame || win.webkitRequestAnimationFrame || win.setTimeout,
 "Boolean Number String Function Array Date RegExp Object Error".replace(rword, function(name) {
     class2type["[object " + name + "]"] = name.toLowerCase()
@@ -89,6 +90,31 @@ var object = {
         }
         return ret;
     },
+    toArray: function(object){
+        var res = [], val, data
+        for (var key in obj) {
+            val = obj[key]
+            data = isObject(val)
+                ? val
+                : { $value: val }
+            data.$key = key
+            res.push(data)
+        }
+        return res;
+    },
+    /**
+     *  Define an ienumerable property
+     *  This avoids it being included in JSON.stringify
+     *  or for...in loops.
+     */
+    defProtected: function (obj, key, val, enumerable, writable) {
+        def(obj, key, {
+            value        : val,
+            enumerable   : enumerable,
+            writable     : writable,
+            configurable : true
+        })
+    },
     /**
      * 继承
      * @param {Object} protoProps 需要继承的原型
@@ -127,6 +153,18 @@ var array = {
             return -1;
         }
         return arr.indexOf(element);
+    },
+    unique: function (arr) {
+        var hash = {},
+            i = arr.length,
+            key, res = []
+        while (i--) {
+            key = arr[i]
+            if (hash[key]) continue;
+            hash[key] = 1
+            res.push(key)
+        }
+        return res;
     }
 };
 /** 
@@ -262,6 +300,7 @@ module.exports = {
     isArray: isArray,
     isObject: isObject,
     isString: isString,
+    hash: object.hash,
     isFunction: isFunction,
     isEqual: isEqual,
     mix: mix,

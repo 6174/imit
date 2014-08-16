@@ -64,7 +64,7 @@ BindingProto._update = function () {
 BindingProto.val = function () {
     return this.isComputed && !this.isFn
         ? this.value.$get()
-        : this.value
+        : this.value;
 }
 
 /**
@@ -74,7 +74,7 @@ BindingProto.val = function () {
 BindingProto.pub = function () {
     var i = this.subs.length
     while (i--) {
-        this.subs[i].update()
+        this.subs[i].update();
     }
 }
 

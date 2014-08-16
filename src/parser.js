@@ -1,4 +1,6 @@
-var toFragment = require('./fragment');
+var toFragment = require('./fragment')
+    TextParser = require('./textParser'),
+    ExpParser  = require('./ExpParser');
 
 /**
  * Parses a template string or node and normalizes it into a
@@ -46,5 +48,7 @@ function parseTemplate(template) {
 }
 
 module.exports = {
-    parserTemplate: parserTemplate
+    parserTemplate: parserTemplate,
+    TextParser: TextParser,
+    ExpParser: ExpParser
 };
