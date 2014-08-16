@@ -122,16 +122,16 @@ var object = {
  * array utils
  */
 var array = {
-        indexOf: function(element, arr) {
-            if (!isArray(arr)) {
-                return -1;
-            }
-            return arr.indexOf(element);
+    indexOf: function(element, arr) {
+        if (!isArray(arr)) {
+            return -1;
         }
+        return arr.indexOf(element);
     }
-    /** 
-     * dom utils
-     */
+};
+/** 
+ * dom utils
+ */
 var dom = {
     attr: function(el, type) {
         var attr = config.prefix + '-' + type,
@@ -140,6 +140,11 @@ var dom = {
             el.removeAttribute(attr)
         }
         return val
+    },
+    query: function (el) {
+        return typeof el === 'string'
+            ? document.querySelector(el)
+            : el;
     }
 };
 /**

@@ -1,22 +1,38 @@
 var config      = require('./config'),
     utils       = require('./utils'),
     defer       = require('./deferred'),
+    Parser      = require('./parser'),
+    makeHash    = utils.hash;
     ViewModel   = require('./viewmodel');
 
 
-testDefered();
-function testDefered(){
-	console.log('start');
-	defer.when((function(){
-		var deferrd = new defer.Deferred();
-		setTimeout(function(){
-			deferrd.resolve('resolve haha ')
-		}, 2000);
-		return deferrd.promise();
-	})()).then(function(attr){
-		console.log('so haha')
-	});
-}
+ViewModel.options = config.globalAssets = {
+    directives  : require('./directives'),
+    filters     : require('./filters'),
+    partials    : makeHash(),
+    effects     : makeHash(),
+    components  : makeHash()
+};
+
+utils.each(['directive', 'filter', 'partial', 'effect', 'component'], function(type){
+	VM[type] = function(id, value){
+		var hash = this.options[type + 's'];
+		if(!hash){
+			hash = this.options[type + 's'] = utils.hash();
+		}
+		if(!value){
+			return hash[id];
+		}
+		if (type === 'partial') {
+            value = Parser.parseTemplate(value);
+        } else if (type === 'component') {
+            // value = utils.toConstructor(value)
+        } else if (type === 'filter') {
+            // utils.checkFilter(value)
+        }
+        hash[id] = value;
+        return this;
+	}
+});
+
 module.exports = ViewModel;
-
-

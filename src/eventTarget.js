@@ -3,52 +3,62 @@
  * @author: xuejia.cxj/6174
  */
 var utils = require('./utils');
-var EventTarget = {
+function EventTarget(ctx){
+    this._ctx = ctx || this;
+}
+
+utils.mix(EventTarget.prototype, {
     on: function(type, callback) {
-        this._callback = this._callback || {};
-        this._callback[type] = this._callback[type] || [];
-        this._callback[type].push(callback);
-        return this;
+        var context = this._ctx || this;
+        context._callback = context._callback || {};
+        context._callback[type] = context._callback[type] || [];
+        context._callback[type].push(callback);
+        return context;
     },
     once: function(event, fn){
-        var self = this;
-        this._callback = this._callback || {};
+        var context = this._ctx || this;
+        context._callback = context._callback || {};
         function on(){
-            self.detach(event, on);
-            fn.apply(this, arguments);
+            context.detach(event, on);
+            fn.apply(context, arguments);
         }
         on.fn = fn;
-        this.on(event, on);
-        return this;
+        context.on(event, on);
+        return context;
     },
     detach: function(type, callback) {
-        this._callback = this._callback || {};
+        var context = this._ctx || this;
+        context._callback = context._callback || {};
         if (!type) {
-            this._callback = {};
+            context._callback = {};
         } else if (!callback) {
-            this._callback[type] = [];
-        } else if (this._callback[type] && this._callback[type].length > 0) {
-            var index = utils.indexOf(callback, this._callback[type]);
-            if (index != -1) this._callback[type].splice(index, 1);
+            context._callback[type] = [];
+        } else if (context._callback[type] && context._callback[type].length > 0) {
+            var index = utils.indexOf(callback, context._callback[type]);
+            if (index != -1) context._callback[type].splice(index, 1);
         }
-        return this;
+        return context;
     },
     fire: function(type, data) {
-        if (this._callback) {
-            var arr = this._callback[type];
+        var context = this._ctx || this;
+        if (context._callback) {
+            var arr = context._callback[type];
             if (arr && arr.length > 0) {
                 data = data || {};
                 data.type = type;
-                data.target = this;
+                data.target = context;
                 for (var i = arr.length - 1; i >= 0; i--) {
-                    utils.isFunction(arr[i]) && arr[i].call(this, data);
+                    utils.isFunction(arr[i]) && arr[i].call(context, data);
                 }
             }
         }
-        return this;
+        return context;
     }
-};
+});
 
-EventTarget.emit = EventTarget.fire;
-EventTarget.off = EventTarget.detach;
+utils.mix(EventTarget.prototype, {
+    emit: EventTarget.prototype.fire,
+    off: EventTarget.prototype.detach
+});
+
 module.exports = EventTarget;
