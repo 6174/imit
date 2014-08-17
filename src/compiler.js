@@ -525,7 +525,7 @@ utils.mix(Compiler.prototype, {
 	 *  CREATE BINDING AND ATTACH GETTER/SETTER FOR A KEY TO THE VIEWMODEL OBJECT
 	 */
 	createBinding: function(key, directive){
-		utils.log('  created binding: ' + key);
+		// utils.log('  created binding: ' + key);
 		var compiler = this,
 	        methods  = compiler.options.methods,
 	        isExp    = directive && directive.isExp,

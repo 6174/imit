@@ -39,16 +39,16 @@ utils.mix(EventTarget.prototype, {
         }
         return this;
     },
-    fire: function(type, data) {
+    fire: function(type, a, b, c, d) {
         var context = this._ctx || this;
         if (context._callback) {
             var arr = context._callback[type];
             if (arr && arr.length > 0) {
-                data = data || {};
-                data.type = type;
-                data.target = context;
+                // data = data || {};
+                // data.type = type;
+                // data.target = context;
                 for (var i = arr.length - 1; i >= 0; i--) {
-                    utils.isFunction(arr[i]) && arr[i].call(context, data);
+                    utils.isFunction(arr[i]) && arr[i].call(context, a, b, c, d);
                 }
             }
         }

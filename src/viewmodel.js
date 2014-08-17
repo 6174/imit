@@ -15,6 +15,9 @@ utils.mix(VM.prototype, {
 	'$init': function init(options){
 		new Compiler(this, options);
 	},
+	'$destroy': function destroy(noRemove){
+		this.$compiler.destroy(noRemove);
+	},
 	'$get': function get(key){
 		var val = utils.object.get(this, key);
 		return val === undefined && this.$parent
@@ -65,20 +68,21 @@ utils.mix(VM.prototype, {
 		target = utils.dom.query(target);
 		var el = this.$el;
 		target.appendChild(el)
-        cb && util.nextTick(cb);
+        cb && utils.nextTick(cb);
 	},
 	'$remove': function remove(target, cb){
-		target = util.dom.query(target);
+		target = utils.dom.query(target);
 		var el = this.$el;
 		if(el.parentNode){
 			el.parentNode.removeChild(el);
 		}
-		cb && util.nextTick(cb);
+		cb && utils.nextTick(cb);
 	},
 	'$before': function before(target, cb){
-		target = util.dom.query(target);
+		target = utils.dom.query(target);
+		var el = this.$el;
 		target.parentNode.insertBefore(el, target);
-		cb && util.nextTick(cb);
+		cb && utils.nextTick(cb);
 	},
 	'$after': function after(target, cb){
 		target = util.dom.query(target);
@@ -88,7 +92,7 @@ utils.mix(VM.prototype, {
 		}else{
 			target.parentNode.appendChild(el);
 		}
-		cb && util.nextTick(cb);
+		cb && utils.nextTick(cb);
 	}
 });
 /**
