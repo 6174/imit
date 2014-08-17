@@ -37,9 +37,7 @@ BindingProto.update = function (value) {
         bindingBatcher.push({
             id: this.id,
             execute: function () {
-                if (!self.unbound) {
-                    self._update()
-                }
+                self._update();
             }
         })
     }

@@ -56,7 +56,7 @@ function parse (text) {
  *  e.g.  a {{b}} c  =>  "a " + b + " c"
  */
 function parseAttr (attr) {
-    Directive = Directive || require('./directives')
+    Directive = Directive || require('./directive')
     var tokens = parse(attr)
     if (!tokens) return null
     if (tokens.length === 1) return tokens[0].key

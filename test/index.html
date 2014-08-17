@@ -21,9 +21,9 @@
     <h1>Latest Vue.js Commits</h1>
     <input type="radio" id="master" name="branch" v-model="branch" value="master">
     <label for="master">master</label>
-    <br>
     <input type="radio" id="dev" name="branch" v-model="branch" value="dev">
     <label for="dev">dev</label>
+    <br>{{branch}}
     <ul>
         <li v-repeat="commits">
             <a href="{{html_url}}" target="_blank" class="commit">{{sha.slice(0, 7)}}</a>

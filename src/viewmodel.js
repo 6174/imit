@@ -22,7 +22,7 @@ utils.mix(VM.prototype, {
 		        : val;
 	},
 	'$set': function set(key, value){
-		utils.set(this, key, value);
+		utils.object.set(this, key, value);
 	},
 	'$watch': function watch(key, callback) {
 		var id = utils.guid('watcherid-'), 

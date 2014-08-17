@@ -34,7 +34,7 @@ utils.mix(EventTarget.prototype, {
         } else if (!callback) {
             context._callback[type] = [];
         } else if (context._callback[type] && context._callback[type].length > 0) {
-            var index = utils.indexOf(callback, context._callback[type]);
+            var index = utils.array.indexOf(callback, context._callback[type]);
             if (index != -1) context._callback[type].splice(index, 1);
         }
         return this;

@@ -12,17 +12,17 @@ var dirId           = 1,
  */
 function Directive (name, ast, definition, compiler, el) {
 
-    this.id             = dirId++
-    this.name           = name
-    this.compiler       = compiler
-    this.vm             = compiler.vm
-    this.el             = el
-    this.computeFilters = false
-    this.key            = ast.key
-    this.arg            = ast.arg
-    this.expression     = ast.expression
+    this.id             = dirId++;
+    this.name           = name;
+    this.compiler       = compiler;
+    this.vm             = compiler.vm;
+    this.el             = el;
+    this.computeFilters = false;
+    this.key            = ast.key;
+    this.arg            = ast.arg;
+    this.expression     = ast.expression;
 
-    var isEmpty = this.expression === ''
+    var isEmpty = this.expression === '';
 
     // mix in properties from the directive definition
     if (typeof definition === 'function') {
@@ -40,14 +40,14 @@ function Directive (name, ast, definition, compiler, el) {
     }
 
     if (TextParser.Regex.test(this.key)) {
-        this.key = compiler.eval(this.key)
+        this.key = compiler.eval(this.key);
         if (this.isLiteral) {
-            this.expression = this.key
+            this.expression = this.key;
         }
     }
 
     var filters = ast.filters,
-        filter, fn, i, l, computed
+        filter, fn, i, l, computed;
     if (filters) {
         this.filters = []
         for (i = 0, l = filters.length; i < l; i++) {

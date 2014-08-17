@@ -207,7 +207,7 @@ function convertKey (obj, key, propagate){
 		},
 		set: function (newValue){
 			var oldValue = values[key];
-			ubobserve(oldValue, key, emitter);
+			unobserve(oldValue, key, emitter);
 			copyPaths(newValue, oldValue);
 			init(newValue, true);
 		}

@@ -9,7 +9,11 @@ var demo = new VM({
     created: function () {
         this.$watch('branch', function () {
             this.fetchData();
-        })
+        });
+
+        this.$watch('$data', function () {
+            // console.log('change data');
+        });
     },
 
     filters: {

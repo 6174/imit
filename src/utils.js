@@ -185,6 +185,19 @@ var dom = {
             : el;
     }
 };
+
+ /**
+ *  Make sure null and undefined output empty string
+ */
+function guard(value) {
+    /* jshint eqeqeq: false, eqnull: true */
+    return value == null
+        ? ''
+        : (typeof value == 'object')
+            ? JSON.stringify(value)
+            : value;
+}
+
 /**
  * 简单地对象合并
  * @param  object r 源对象
@@ -311,5 +324,6 @@ module.exports = {
     each: each,
     log: log,
     warn: warn,
-    nextTick: nextTick
+    nextTick: nextTick,
+    guard: guard
 }

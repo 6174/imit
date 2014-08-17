@@ -5,9 +5,10 @@ var EventTarget = require('./eventTarget'),
 	Binding     = require('./binding'),
 	Parser      = require('./parser'),
 	Observer    = require('./observer'),
-	Directive   = require('./directives'),
+	Directive   = require('./directive'),
 	TextParser  = Parser.TextParser,
 	ExpParser   = Parser.ExpParser,
+	DepsParser  = Parser.DepsParser,
 	ViewModel,
     
     // CACHE METHODS
@@ -62,6 +63,7 @@ utils.mix(Compiler.prototype, {
                 components[key] = ViewModel.extend(components[key]);
             }
         }
+
         if (partials) {
             for (key in partials) {
                 partials[key] = Parser.parserTemplate(partials[key])
@@ -158,12 +160,19 @@ utils.mix(Compiler.prototype, {
 
 		// COMPILER 
 		utils.mix(this, {
+			// vm ref
 			vm: vm,
+			// bindings for all
 			bindings: utils.hash(),
+			// directives
 			dirs: [],
+			// property in template but not defined in data
 			deferred: [],
+			// property need computation by subscribe other property
 			computed: [],
+			// composite pattern
 			children: [],
+			// event emitter
 			emitter: new EventTarget()
 		});
 
@@ -205,7 +214,7 @@ utils.mix(Compiler.prototype, {
 		// CREATE BINDINGS FOR COMPUTED PROPERTIES
 	    if (options.methods) {
 	        for (key in options.methods) {
-	            compiler.createBinding(key)
+	            compiler.createBinding(key);
 	        }
 	    }
 
@@ -286,7 +295,9 @@ utils.mix(Compiler.prototype, {
 	    // Any directive that creates child VMs are deferred
 	    // so that when they are compiled, all bindings on the
 	    // parent VM have been created.
-	    i = compiler.deferred.length
+
+	    var i = compiler.deferred.length;
+	    console.log('deferred:', compiler.deferred);
 	    while (i--) {
 	        compiler.bindDirective(compiler.deferred[i])
 	    }
@@ -414,7 +425,7 @@ utils.mix(Compiler.prototype, {
 	    // register hooks setup in options
 	    utils.each(hooks, function(hook){
 	    	var i, fns;
-	        fns = options[hook]
+	        fns = options[hook];
 	        if (utils.isArray(fns)) {
 	            i = fns.length
 	            // since hooks were merged with child at head,
@@ -484,7 +495,7 @@ utils.mix(Compiler.prototype, {
 	    var $dataBinding = compiler.bindings['$data'] = new Binding(compiler, '$data');
 	    $dataBinding.update(data);
 
-	    Object.defineProperty(compiler.vm, '$data', {
+	    def(compiler.vm, '$data', {
 	    	get: function(){
 	    		compiler.observer.emit('get', '$data');
 	    	},
@@ -502,7 +513,8 @@ utils.mix(Compiler.prototype, {
 	    	.on('set', onSet)
 	    	.on('mutate', onSet);
 	    function onSet (key) {
-	    	if (key !=='$data') update;
+	    	console.log('onSetted', key);
+	    	if (key !=='$data') update();
 	    }
 
 	    function update(){
@@ -618,7 +630,7 @@ utils.mix(Compiler.prototype, {
 	    // a normal node
 	    if (nodeType === 1 && node.tagName !== 'SCRIPT') { 
 	        this.compileElement(node, root);
-	    } else if (nodeType === 3 && config.interpolate) {
+	    } else if (nodeType === 3) {
 	        this.compileTextNode(node);
 	    }
 	},
@@ -630,24 +642,27 @@ utils.mix(Compiler.prototype, {
 	        node.value = this.eval(node.value);
 	    }
 
+
 	    // only compile if this element has attributes
 	    // or its tagName contains a hyphen (which means it could
 	    // potentially be a custom element)
 	    if (node.hasAttributes() || node.tagName.indexOf('-') > -1) {
+		    console.log('\n\n-------------compile: ', node);
 
 	    	// skip anything with v-pre
 	        if (utils.dom.attr(node, 'pre') !== null) {
 	            return;
 	        }
 
-	        var i, l, j, k
+	        var i, l, j, k;
 
 	        // check priority directives.
 	        // if any of them are present, it will take over the node with a childVM
 	        // so we can skip the rest
 	        for (i = 0, l = priorityDirectives.length; i < l; i++) {
 	            if (this.checkPriorityDir(priorityDirectives[i], node, root)) {
-	                return
+	            	console.log('present and take over with a child vm');
+	                return;
 	            }
 	        }
 
@@ -677,6 +692,7 @@ utils.mix(Compiler.prototype, {
 	            isDirective = false
 
 	            if (attrname.indexOf(prefix) === 0) {
+
 	                // a directive - split, parse and bind it.
 	                isDirective = true
 	                dirname = attrname.slice(prefix.length)
@@ -687,10 +703,11 @@ utils.mix(Compiler.prototype, {
 	                for (j = 0, k = directives.length; j < k; j++) {
 	                    this.bindDirective(directives[j])
 	                }
-	            } else if (config.interpolate) {
+	            } else {
 	                // non directive attribute, check interpolation tags
 	                exp = TextParser.parseAttr(attr.value)
 	                if (exp) {
+		                console.log('interpolation: ', attr.value, exp)
 	                    directive = this.parseDirective('attr', exp, node)
 	                    directive.arg = attrname
 	                    if (params && params.indexOf(attrname) > -1) {
@@ -708,45 +725,50 @@ utils.mix(Compiler.prototype, {
 	            }
 	        }
 
-	        // recursively compile childNodes
-		    if (node.hasChildNodes()) {
-		        slice.call(node.childNodes).forEach(this.compile, this);
-		    }
+	    }
+        // recursively compile childNodes
+	    if (node.hasChildNodes()) {
+	        slice.call(node.childNodes).forEach(this.compile, this);
 	    }
 	},
 	compileTextNode: function (node) {
 	    var tokens = TextParser.parse(node.nodeValue)
-	    if (!tokens) return
-	    var el, token, directive
+	    if (!tokens) return;
+	    console.log('\n\n------------compile textNode:', node, tokens);
+	    var el, token, directive;
 
 	    for (var i = 0, l = tokens.length; i < l; i++) {
 
-	        token = tokens[i]
-	        directive = null
+	        token = tokens[i];
+	        directive = null;
 
 	        if (token.key) { // a binding
 	            if (token.key.charAt(0) === '>') { // a partial
-	                el = document.createComment('ref')
-	                directive = this.parseDirective('partial', token.key.slice(1), el)
+	                el = document.createComment('ref');
+	                directive = this.parseDirective('partial', token.key.slice(1), el);
 	            } else {
-	                if (!token.html) { // text binding
-	                    el = document.createTextNode('')
-	                    directive = this.parseDirective('text', token.key, el)
+	                if (!token.html) { 
+	                	// text binding
+	                    el = document.createTextNode('');
+	                    directive = this.parseDirective('text', token.key, el);
 	                } else { // html binding
 	                    el = document.createComment(config.prefix + '-html')
-	                    directive = this.parseDirective('html', token.key, el)
+	                    directive = this.parseDirective('html', token.key, el);
 	                }
 	            }
-	        } else { // a plain string
+	        } else { 
+	        	// a plain string
 	            el = document.createTextNode(token)
 	        }
 
 	        // insert node
-	        node.parentNode.insertBefore(el, node)
+	        node.parentNode.insertBefore(el, node);
+
 	        // bind directive
-	        this.bindDirective(directive)
+	        this.bindDirective(directive);
 
 	    }
+
 	    node.parentNode.removeChild(node)
 	}
 });
@@ -803,7 +825,7 @@ utils.mix(Compiler.prototype, {
 	    if (!directive) return;
 
 	    // keep track of it so we can unbind() later
-	    this.dirs.push(directive)
+	    this.dirs.push(directive);
 
 	    // for empty or literal directives, simply call its bind()
 	    // and we're done.
@@ -812,6 +834,7 @@ utils.mix(Compiler.prototype, {
 	        return
 	    }
 
+	    console.log('bind directive', directive, bindingOwner);
 	    // otherwise, we got more work to do...
 	    var binding,
 	        compiler = bindingOwner || this,
@@ -819,7 +842,7 @@ utils.mix(Compiler.prototype, {
 
 	    if (directive.isExp) {
 	        // expression bindings are always created on current compiler
-	        binding = compiler.createBinding(key, directive)
+	        binding = compiler.createBinding(key, directive);
 	    } else {
 	        // recursively locate which compiler owns the binding
 	        while (compiler) {
@@ -899,7 +922,7 @@ utils.mix(Compiler.prototype, {
 	        exp         = computedKey ? directive.expression : key,
 	        getter      = this.expCache[exp]
 	    if (!getter) {
-	        getter = this.expCache[exp] = ExpParser.parse(computedKey || key, this)
+	        getter = this.expCache[exp] = ExpParser.parse(computedKey || key, this);
 	    }
 	    if (getter) {
 	        this.markComputed(binding, getter)
@@ -922,9 +945,9 @@ utils.mix(Compiler.prototype, {
 	            value = { $get: value }
 	        }
 	        binding.value = {
-	            $get: utils.bind(value.$get, this.vm),
+	            $get: utils.object.bind(value.$get, this.vm),
 	            $set: value.$set
-	                ? utils.bind(value.$set, this.vm)
+	                ? utils.object.bind(value.$set, this.vm)
 	                : undefined
 	        }
 	    }
@@ -943,7 +966,7 @@ utils.mix(Compiler.prototype, {
 	    this.emitter.emit(event);
 	},
 	hasKey: function (key) {
-	    var baseKey = utils.baseKey(key)
+	    var baseKey = utils.object.baseKey(key)
 	    return hasOwn.call(this.data, baseKey) ||
 	        hasOwn.call(this.vm, baseKey)
 	},
