@@ -1,7 +1,7 @@
 var utils = require('./utils')
 
 function Batcher () {
-    this.reset()
+    this.reset();
 }
 
 var BatcherProto = Batcher.prototype

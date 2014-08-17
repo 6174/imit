@@ -229,7 +229,7 @@ function convertKey (obj, key, propagate){
  *  all of its properties.
  */
 function emitSet (obj) {
-    var emitter = obj && obj.__emitter__
+    var emitter = obj && obj.__emitter__;
     if (!emitter) return;
     if (utils.isArray(obj)) {
         emitter.emit('set', 'length', obj.length);

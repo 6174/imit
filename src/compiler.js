@@ -276,7 +276,6 @@ utils.mix(Compiler.prototype, {
 	    // AND EMIT THE FIRST BATCH OF SET EVENTS, WHICH WILL
 	    // IN TURN CREATE THE CORRESPONDING BINDINGS.
 	    compiler.observeData(data)
-	    utils.log(compiler);
 	},
 	_startCompile: function(){
 		var options = this.options,
@@ -297,7 +296,6 @@ utils.mix(Compiler.prototype, {
 	    // parent VM have been created.
 
 	    var i = compiler.deferred.length;
-	    console.log('deferred:', compiler.deferred);
 	    while (i--) {
 	        compiler.bindDirective(compiler.deferred[i])
 	    }
@@ -398,7 +396,7 @@ utils.mix(Compiler.prototype, {
 	    compiler.execHook('afterDestroy')
 
 	    // finally, unregister all listeners
-	    compiler.observer.off()
+	    compiler.observer.off();
 	    compiler.emitter.off();
 	}
 });
@@ -414,7 +412,7 @@ utils.mix(Compiler.prototype, {
 
 	    // A HASH TO HOLD EVENT PROXIES FOR EACH ROOT LEVEL KEY
 	    // SO THEY CAN BE REFERENCED AND REMOVED LATER
-	    observer.proxies = {}
+	    observer.proxies = {};
 
 	    // ADD OWN LISTENERS WHICH TRIGGER BINDING UPDATES
 	    observer
@@ -498,8 +496,9 @@ utils.mix(Compiler.prototype, {
 	    def(compiler.vm, '$data', {
 	    	get: function(){
 	    		compiler.observer.emit('get', '$data');
+	    		return compiler.data;
 	    	},
-	    	set: function(){
+	    	set: function(newData){
 	    		var oldData = compiler.data;
 	    		Observer.unobserve(oldData, '', observer);
 	    		compiler.data = newData;
@@ -513,7 +512,6 @@ utils.mix(Compiler.prototype, {
 	    	.on('set', onSet)
 	    	.on('mutate', onSet);
 	    function onSet (key) {
-	    	console.log('onSetted', key);
 	    	if (key !=='$data') update();
 	    }
 
@@ -833,8 +831,6 @@ utils.mix(Compiler.prototype, {
 	        if (directive.bind) directive.bind()
 	        return
 	    }
-
-	    console.log('bind directive', directive, bindingOwner);
 	    // otherwise, we got more work to do...
 	    var binding,
 	        compiler = bindingOwner || this,
@@ -879,7 +875,7 @@ utils.mix(Compiler.prototype, {
 	defineDataProp: function (key, binding) {
 	    var compiler = this,
 	        data     = compiler.data,
-	        ob       = data.__emitter__
+	        ob       = data.__emitter__;
 
 	    // make sure the key is present in data
 	    // so it can be observed
@@ -977,7 +973,7 @@ utils.mix(Compiler.prototype, {
 	 *  before a childVM is even compiled...
 	 */
 	eval: function (exp, data) {
-	    var parsed = TextParser.parseAttr(exp)
+	    var parsed = TextParser.parseAttr(exp);
 	    return parsed
 	        ? ExpParser.eval(parsed, this, data)
 	        : exp;
