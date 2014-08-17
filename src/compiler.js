@@ -5,33 +5,22 @@ var EventTarget = require('./eventTarget'),
 	Binding     = require('./binding'),
 	Parser      = require('./parser'),
 	Observer    = require('./observer'),
-	Directive   = require('./directive'),
+	Directive   = require('./directives'),
 	TextParser  = Parser.TextParser,
-	ExpParser   = Parser.ExpParser;
-
-var ViewModel,
+	ExpParser   = Parser.ExpParser,
+	ViewModel,
     
     // CACHE METHODS
     slice       = [].slice,
-    extend      = utils.extend,
     hasOwn      = ({}).hasOwnProperty,
     def         = Object.defineProperty,
 
     // HOOKS TO REGISTER
-    hooks = [
-        'created', 'ready',
-        'beforeDestroy', 'afterDestroy',
-        'attached', 'detached'
-    ],
+    hooks       = ['created', 'ready', 'beforeDestroy', 'afterDestroy', 'attached', 'detached'],
 
     // LIST OF PRIORITY DIRECTIVES
     // THAT NEEDS TO BE CHECKED IN SPECIFIC ORDER
-    priorityDirectives = [
-        'if',
-        'repeat',
-        'view',
-        'component'
-    ];
+    priorityDirectives = ['if', 'repeat', 'view', 'component'];
 
 /**
  *  THE DOM COMPILER
@@ -70,7 +59,7 @@ utils.mix(Compiler.prototype, {
 
         if (components) {
             for (key in components) {
-                // components[key] = new ViewModel(components[key]);
+                components[key] = ViewModel.extend(components[key]);
             }
         }
         if (partials) {
@@ -78,73 +67,94 @@ utils.mix(Compiler.prototype, {
                 partials[key] = Parser.parserTemplate(partials[key])
             }
         }
+
+        var filter, THIS_RE = /[^\w]this[^\w]/;
         if (filters) {
             for (key in filters) {
-                // utils.checkFilter(filters[key])
+            	filter = filters[key];
+            	if (THIS_RE.test(filter.toString())) {
+		            filter.computed = true;
+		        }
             }
         }
+
         if (template) {
             options.template = Parser.parserTemplate(template)
         }
 	},
 	_initElement: function(){
-		var options = this.options;
-		// CREATE THE NODE FIRST
-	    var el = typeof options.el === 'string'
-	        ? document.querySelector(options.el)
-	        : options.el || document.createElement(options.tagName || 'div');
+		var options = this.options,
+			vm      = this.vm,
+	    	template = options.template, 
+	    	el;
 
-	    var template = options.template, child, replacer, i, attr, attrs;
+		initEl();
+	    resolveTemplate();
+	    resolveElementOption();
 
-	    // TEMPLATE IS A FRAGMENT DOCUMENT
-	    if(template){
-	    	// COLLECT ANYTHING ALREADY IN THERE
-	        if (el.hasChildNodes()) {
-	            this.rawContent = document.createElement('div')
-	            while (child = el.firstChild) {
-	                this.rawContent.appendChild(child)
-	            }
-	        }
-	        // REPLACE OPTION: USE THE FIRST NODE IN
-	        // THE TEMPLATE DIRECTLY TO REPLACE EL
-	        if (options.replace && template.firstChild === template.lastChild) {
-	            replacer = template.firstChild.cloneNode(true)
-	            if (el.parentNode) {
-	                el.parentNode.insertBefore(replacer, el)
-	                el.parentNode.removeChild(el)
-	            }
-	            // COPY OVER ATTRIBUTES
-	            if (el.hasAttributes()) {
-	                i = el.attributes.length
-	                while (i--) {
-	                    attr = el.attributes[i]
-	                    replacer.setAttribute(attr.name, attr.value)
-	                }
-	            }
-	            // REPLACE
-	            el = replacer
-	        } else {
-	            el.appendChild(template.cloneNode(true))
-	        }
-	    }
-
-	    // APPLY ELEMENT OPTIONS
-	    if (options.id) el.id = options.id
-	    if (options.className) el.className = options.className
-	    attrs = options.attributes
-	    if (attrs) {
-	        for (attr in attrs) {
-	            el.setAttribute(attr, attrs[attr])
-	        }
-	    }
-
-	    this.el = el;
+	    this.el = el; 
 		this.el._vm = vm;
 		utils.log('new VM instance: ' + el.tagName + '\n');
+		
+		// CREATE THE NODE FIRST
+		function initEl(){
+			el = typeof options.el === 'string'
+	        ? document.querySelector(options.el)
+	        : options.el || document.createElement(options.tagName || 'div');
+		}
+
+	    function resolveTemplate(){
+	    	var child, replacer, i;
+	    	// TEMPLATE IS A FRAGMENT DOCUMENT
+		    if(template){
+		    	// COLLECT ANYTHING ALREADY IN THERE
+		        if (el.hasChildNodes()) {
+		            this.rawContent = document.createElement('div')
+		            while (child = el.firstChild) {
+		                this.rawContent.appendChild(child)
+		            }
+		        }
+		        // REPLACE OPTION: USE THE FIRST NODE IN
+		        // THE TEMPLATE DIRECTLY TO REPLACE EL
+		        if (options.replace && template.firstChild === template.lastChild) {
+		            replacer = template.firstChild.cloneNode(true)
+		            if (el.parentNode) {
+		                el.parentNode.insertBefore(replacer, el)
+		                el.parentNode.removeChild(el)
+		            }
+		            // COPY OVER ATTRIBUTES
+		            if (el.hasAttributes()) {
+		                i = el.attributes.length
+		                while (i--) {
+		                    attr = el.attributes[i]
+		                    replacer.setAttribute(attr.name, attr.value)
+		                }
+		            }
+		            // REPLACE
+		            el = replacer
+		        } else {
+		            el.appendChild(template.cloneNode(true))
+		        }
+		    }
+	    }
+
+	    function resolveElementOption(){
+	    	var attrs, attr;
+			// APPLY ELEMENT OPTIONS
+		    if (options.id) el.id = options.id
+		    if (options.className) el.className = options.className
+		    attrs = options.attributes
+		    if (attrs) {
+		        for (attr in attrs) {
+		            el.setAttribute(attr, attrs[attr])
+		        }
+		    }
+		}
 	},
 	_initVM: function(){
-		var options = this.options,
-			vm = this.vm;
+		var options  = this.options,
+			compiler = this;
+			vm       = this.vm;
 
 		// COMPILER 
 		utils.mix(this, {
@@ -160,7 +170,7 @@ utils.mix(Compiler.prototype, {
 		// COMPILER.VM 
 		utils.mix(vm, {
 			'$': {},
-			'$el': el,
+			'$el': this.el,
 			'$options': options,
 			'$compiler': compiler,
 			'$event': null
@@ -257,7 +267,7 @@ utils.mix(Compiler.prototype, {
 	    // AND EMIT THE FIRST BATCH OF SET EVENTS, WHICH WILL
 	    // IN TURN CREATE THE CORRESPONDING BINDINGS.
 	    compiler.observeData(data)
-
+	    utils.log(compiler);
 	},
 	_startCompile: function(){
 		var options = this.options,
@@ -293,7 +303,7 @@ utils.mix(Compiler.prototype, {
 	    compiler.init = false
 
 	    // post compile / ready hook
-	    compiler.execHook('ready')
+	    compiler.execHook('ready');
 	},
 	destroy: function (noRemove) {
 
@@ -378,9 +388,9 @@ utils.mix(Compiler.prototype, {
 
 	    // finally, unregister all listeners
 	    compiler.observer.off()
-	    compiler.emitter.off()
+	    compiler.emitter.off();
 	}
-);
+});
 /**
  * observation
  */
@@ -554,7 +564,8 @@ utils.mix(Compiler.prototype, {
 	        }
 	    }
 	    return binding;
-	});
+	}
+});
 
 /**
  * content resolve and compile
@@ -565,7 +576,7 @@ utils.mix(Compiler.prototype, {
 	 *  PER THE WEB COMPONENTS SPEC
 	 */
 	resolveContent: function() {
-		var outlets = [].slice.call(this.el.getElementsByTagName('content')),
+		var outlets = slice.call(this.el.getElementsByTagName('content')),
 			raw = this.rawContent;
 
 		// first pass, collect corresponding content
@@ -574,12 +585,12 @@ utils.mix(Compiler.prototype, {
 			if (raw) {
 				select = outlet.getAttribute('select');
 				if (select) {
-					outlet.content = [].slice.call(raw.querySelectorAll(select));
+					outlet.content = slice.call(raw.querySelectorAll(select));
 				} else {
 					main = outlet;
 				}
 			} else {
-				outlet.content = [].slice.call(outlet.childNodes);
+				outlet.content = slice.call(outlet.childNodes);
 			}
 		});
 
@@ -658,7 +669,7 @@ utils.mix(Compiler.prototype, {
 	            }
 	        }
 
-	        var attrs = [].slice.call(node.attributes);
+	        var attrs = slice.call(node.attributes);
 	        for (i = 0, l = attrs.length; i < l; i++) {
 
 	            attr = attrs[i]
@@ -699,7 +710,7 @@ utils.mix(Compiler.prototype, {
 
 	        // recursively compile childNodes
 		    if (node.hasChildNodes()) {
-		        [].slice.call(node.childNodes).forEach(this.compile, this);
+		        slice.call(node.childNodes).forEach(this.compile, this);
 		    }
 	    }
 	},
@@ -737,7 +748,8 @@ utils.mix(Compiler.prototype, {
 
 	    }
 	    node.parentNode.removeChild(node)
-	});
+	}
+});
 
 /**
  * directive stuff

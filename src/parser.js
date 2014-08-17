@@ -48,7 +48,7 @@ function parseTemplate(template) {
 }
 
 module.exports = {
-    parserTemplate: parserTemplate,
+    parseTemplate: parseTemplate,
     TextParser: TextParser,
     ExpParser: ExpParser
 };

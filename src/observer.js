@@ -26,7 +26,7 @@ utils.mix(ObjProxy, {
         this[key] = val;
         convertKey(this, key, true);
     },
-    '$delete': function delete(key) {
+    '$delete': function (key) {
     	if (!utils.object.has(this, key)){
     		return;
     	}
@@ -214,9 +214,9 @@ function convertKey (obj, key, propagate){
 	});
 	function init (val, propagate){
 		values[key] = val;
-		emitter.emit('set', key, val, propagete);
+		emitter.emit('set', key, val, propagate);
 		if (utils.isArray(val)) {
-			emitter.emit('set', key + '.length', val.length, propagate;)
+			emitter.emit('set', key + '.length', val.length, propagate);
 		}
 		observe(val, key, emitter);
 	}

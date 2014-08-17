@@ -1,6 +1,7 @@
 var utils    = require('./utils'),
 	Batcher  = require('./batcher'),
-	Compiler = require('./compiler');
+	Compiler = require('./compiler'),
+	watcherBatcher = new Batcher();
 /**
  * ViewModel
  * @param {String} options.el: id
@@ -12,7 +13,7 @@ function VM(options){
 
 utils.mix(VM.prototype, {
 	'$init': function init(options){
-		Compiler.compile(this, options);
+		new Compiler(this, options);
 	},
 	'$get': function get(key){
 		var val = utils.object.get(this, key);
@@ -28,7 +29,7 @@ utils.mix(VM.prototype, {
 			self = this;
 		function eventResolver(){
 			var args = [].slice.call(arguments);
-			watchBatcher.push({
+			watcherBatcher.push({
 				id: id,
 				override: true,
 				execute: function(){
@@ -36,8 +37,8 @@ utils.mix(VM.prototype, {
 				}
 			});
 		}
-		callback._fn = on;
-		this.$compiler.observer.on('change:' + key, on);
+		callback._fn = eventResolver;
+		this.$compiler.observer.on('change:' + key, eventResolver);
 	},
 	'$unwatch': function unwatch(key, callback) {
 		var args = ['change:' + key];

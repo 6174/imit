@@ -4,7 +4,7 @@
  */
 var utils = require('./utils');
 function EventTarget(ctx){
-    this._ctx = ctx || this;
+    this._ctx = ctx || this;  
 }
 
 utils.mix(EventTarget.prototype, {
@@ -13,7 +13,7 @@ utils.mix(EventTarget.prototype, {
         context._callback = context._callback || {};
         context._callback[type] = context._callback[type] || [];
         context._callback[type].push(callback);
-        return context;
+        return this;
     },
     once: function(event, fn){
         var context = this._ctx || this;
@@ -24,7 +24,7 @@ utils.mix(EventTarget.prototype, {
         }
         on.fn = fn;
         context.on(event, on);
-        return context;
+        return this;
     },
     detach: function(type, callback) {
         var context = this._ctx || this;
@@ -37,7 +37,7 @@ utils.mix(EventTarget.prototype, {
             var index = utils.indexOf(callback, context._callback[type]);
             if (index != -1) context._callback[type].splice(index, 1);
         }
-        return context;
+        return this;
     },
     fire: function(type, data) {
         var context = this._ctx || this;
@@ -52,7 +52,7 @@ utils.mix(EventTarget.prototype, {
                 }
             }
         }
-        return context;
+        return this;
     }
 });
 

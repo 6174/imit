@@ -12,7 +12,7 @@ BatcherProto.push = function (job) {
         this.has[job.id] = job
         if (!this.waiting) {
             this.waiting = true
-            utils.nextTick(utils.bind(this.flush, this))
+            utils.nextTick(utils.object.bind(this.flush, this))
         }
     } else if (job.override) {
         var oldJob = this.has[job.id]

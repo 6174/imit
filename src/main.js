@@ -15,7 +15,7 @@ ViewModel.options = config.globalAssets = {
 };
 
 utils.each(['directive', 'filter', 'partial', 'effect', 'component'], function(type){
-	VM[type] = function(id, value){
+	ViewModel[type] = function(id, value){
 		var hash = this.options[type + 's'];
 		if(!hash){
 			hash = this.options[type + 's'] = utils.hash();
@@ -35,4 +35,5 @@ utils.each(['directive', 'filter', 'partial', 'effect', 'component'], function(t
 	}
 });
 
+window.VM = ViewModel;
 module.exports = ViewModel;
